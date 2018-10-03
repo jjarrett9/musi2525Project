@@ -1,2 +1,2 @@
 # musi2525Project
-Semester Long MATLAB project for MUSI 2525
+Semester Long project for MUSI 2525
