@@ -1,9 +1,15 @@
 from __future__ import division
 import math
 import numpy as np 
+import scipy.io.wavfile as wv
 import wave
 import sys
 import contextlib
+
+testAudioFs, testAudioSamples = wv.read('serato_bigband.wav')
+
+audioOut = wave.open('audioOut', 'w')
+
 
 choseFs = eval(input("input sample rate: "))
 choseF0 = eval(input("input f0: "))
