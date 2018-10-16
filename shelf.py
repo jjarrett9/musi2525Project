@@ -68,9 +68,9 @@ alpha = sw0/(2*q*A)
 
 
 # filter coefficients for peaking (analog)
-b0 = 10 ^ (gain / 20) * (1 + alpha * A)
-b1 = 10 ^ (gain / 20) * (-2 * cw0)
-b2 = 10 ^ (gain / 20) * (1 - alpha * A)
+b0 = 10 ** (gain / 20) * (1 + alpha * A)
+b1 = 10 ** (gain / 20) * (-2 * cw0)
+b2 = 10 ** (gain / 20) * (1 - alpha * A)
 a0 = 1 + (alpha / A )
 a1 = -2 * cw0
 a2 = 1 - (alpha / A)
