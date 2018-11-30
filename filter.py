@@ -12,28 +12,26 @@ class Filter:
     def __init__ (self):
         self.x1 = self.x2 = self.y1 = self.y2 = 0
     
-    def reset(self):
-        self.x1 = self.x2 = self.y1 = self.y2 = 0
-    
-    def filterWav (self, x, f0, fs, q, type):
+    def filter (self, x, fs, f0, q, type):
     
         #initializing return array
         y = np.zeros(x.shape, x.dtype)
+        
         
         coeffs = self.getCoeffs(f0, fs, q, type)
         
         #transfer functions
         for ch in range(0, x.shape[1]):
+            x1 = x2 = y1 = y2 = 0
             for n in range(0,len(x)):
-                samples = [x[n,ch], self.x1, self.x2, self.y1, self.y2]
+                samples = [x[n,ch], x1, x2, y1, y2]
                 y[n,ch] = np.matmul(coeffs, samples)
             
-                self.x2 = self.x1
-                self.x1 = x[n,ch]
-                self.y2 = self.y1
-                self.y1 = y[n,ch]
+                x2 = x1
+                x1 = x[n,ch]
+                y2 = y1
+                y1 = y[n,ch]
             
-            self.reset()
         return y
     
     def getCoeffs (self, f0, fs, q, type):
@@ -41,7 +39,7 @@ class Filter:
         cw = math.cos(w)
         sw = math.sin(w)
         alpha = sw/(2*q) 
-    
+        
         #filter coefficients from trig wizardry
         
         b0 = b1 = b2 = a0 = a1 = a2 = 0 
@@ -73,7 +71,6 @@ class Filter:
             a1 =  -2*cw
             a2 =   1 - alpha 
         
-    
         elif type is Filter.HIGHPASS:
             
             b0 =  (1 + cw)/2
