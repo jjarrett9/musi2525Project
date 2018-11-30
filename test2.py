@@ -1,5 +1,6 @@
 import time
 import asyncio
+import scipy.io.wavfile as wv
 
 async def do_some_work(x):
     print("Waiting " + str(x))
