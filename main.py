@@ -1,11 +1,13 @@
 from __future__ import division
-import math
 import numpy as np 
 import scipy.io.wavfile as wv
 import matplotlib.pyplot as mp
 import time
-import filter
 import simpleaudio as sa
+import pyaudio
+
+import filter
+
 
 f = filter.Filter()
 
