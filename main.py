@@ -14,12 +14,11 @@ f = filter.Filter()
 def generateRandomNoise(t):
     t = int(t)
     noise = np.random.normal(0,10000,(t,2))
-    return noise; 
+    return noise
 
 #Replace this with file read button
 #audioFs, orig_audio = wv.read('serato_bigband.wav')
 audioFs, orig_audio = 44100, generateRandomNoise(1024)
-
 
 
 #Replace this with GUI and such
@@ -30,7 +29,7 @@ g = eval(input("Enter gain: "))
 print("Working...")
 start = time.time()
 #Replace this with GUI and such
-filtered = f.filter(orig_audio*1., audioFs, f0, q, filter.Filter.LOWPASS)
+filtered = f.filter(orig_audio*1., audioFs, f0, q, filter.Filter.PEAK, g)
 output = np.clip(filtered, -32767, 32768)
 end = time.time() - start
 print("Done.")

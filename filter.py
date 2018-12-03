@@ -39,7 +39,7 @@ class Filter:
         cw = math.cos(w)
         sw = math.sin(w)
         alpha = sw/(2*q) 
-        bigA  = 10 ^(dBgain/40)
+        bigA  = 10 **(dBgain/40)
         
         #filter coefficients from trig wizardry
         
@@ -106,7 +106,7 @@ class Filter:
             b2 = bigA * ((bigA + 1) - (bigA - 1) * cw - 2*math.sqrt(bigA) * alpha)
             a0 = (bigA + 1) - (bigA - 1) * cw + 2 * math.sqrt(bigA) * alpha
             a1 = 2 * ((bigA - 1) - (bigA + 1) * cw)
-            a2 = (bigA + 1) - (bigA - 1) * cw - 2*math.sqrt(bigA) * alpha
+            a2 = (bigA + 1) - (bigA - 1) * cw - 2*math.sqrt (bigA) * alpha
 
         b0 /= a0
         b1 /= a0
