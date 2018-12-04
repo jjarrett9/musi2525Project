@@ -90,6 +90,7 @@ class main():
    ########  Difference equation coefficients for Low Shelving filters   #########
         self.fc_l = 0     # default to 0
         self.dbGain_l = 0
+        self.Q = 2
         self.w_l = 2*math.pi*(self.fc_l/self.RATE)
         cwl = math.cos(self.w_l)
         swl = math.sin(self.w_l)
@@ -105,9 +106,9 @@ class main():
         self.a2 = (self.bigA_low + 1) + (self.bigA_low - 1) * cwl - 2*math.sqrt(self.bigA_low) * self.alpha
         
    ########  Difference equation coefficients for high shelving filter   ######
-        self.dbGain_h = 0
         self.fc_h = 0     # default to 0
         self.dbGain_h = 0
+        self.Q = 2
         self.w_h = 2*math.pi*(self.fc_h/self.RATE)
         cwh = math.cos(self.w_h)
         swh = math.sin(self.w_h)
@@ -122,9 +123,9 @@ class main():
         self.a5 = (self.bigA_high + 1) - (self.bigA_high - 1) * cwh - 2*math.sqrt (self.bigA_high) * self.alpha_h
 
    ################ Difference equation for Peak filter ################
-        self.dbGain_p = 0
         self.fc_p = 0     # default to 0
         self.dbGain_p = 0
+        self.Q = 2
         self.w_p = 2*math.pi*(self.fc_p/self.RATE)
         cwp = math.cos(self.w_p)
         swp = math.sin(self.w_p)
@@ -169,10 +170,10 @@ class main():
         self.a_l = [self.a0, self.a1, self.a2]
 
         self.b_h = [self.b3, self.b4, self.b5]
-        self.a_h = [self.a0 ,self.a3, self.a4]
+        self.a_h = [self.a3 ,self.a4, self.a5]
 
         self.b_p = [self.b6 ,self.b7, self.b8]
-        self.a_p = [self.a0, self.a5 ,self.a6]
+        self.a_p = [self.a6, self.a7 ,self.a8]
 
         
         for i in range(0, num_blocks):
@@ -201,38 +202,55 @@ class main():
                 stream.write(output_string)                                
 
                 ################################# Low pass  ###################################
-                self.fc = getf1()
-                #print self.fc
-                K = math.tan(math.pi * self.fc / self.RATE)
-                G = 10**(self.dbGain/20)                
-                self.b0 = (1 + math.sqrt(2*G)*K + G*(K**2))/(1 + math.sqrt(2)*K + K**2)
-                self.b1 = (2*(G*(K**2) - 1))/(1 + math.sqrt(2)*K + K**2)
-                self.b2 = (1 - math.sqrt(2*G)*K + G*(K**2))/(1 + math.sqrt(2)*K + K**2)                
-                self.a1 = (2*((K**2) - 1))/(1 + math.sqrt(2)*K + K**2)
-                self.a2 =  (1 - math.sqrt(2)*K + (K**2))/(1 + math.sqrt(2)*K + K**2)
+                self.fc_l = getf1()     # default to 0
+                self.w_l = 2*math.pi*(self.fc_l/self.RATE)
+                cwl = math.cos(self.w_l)
+                swl = math.sin(self.w_l)
+                self.Q = getQ()
+                self.alpha = swl/(2*self.Q)
+                self.bigA_low = 10**(self.dbGain_l/40)
+
+
+                self.b0 = self.bigA_low * ((self.bigA_low + 1) + (self.bigA_low - 1) * cwl + 2 * math.sqrt(self.bigA_low)*self.alpha)
+                self.b1 = 2 * self.bigA_low * ((self.bigA_low - 1) - (self.bigA_low + 1) * cwl)
+                self.b2 = self.bigA_low * ((self.bigA_low + 1) - (self.bigA_low - 1) * cwl - 2*math.sqrt(self.bigA_low) * self.alpha)
+                self.a0 = (self.bigA_low + 1) + (self.bigA_low - 1) * cwl + 2 * math.sqrt(self.bigA_low) * self.alpha
+                self.a1 = -2 * ((self.bigA_low - 1) + (self.bigA_low + 1) * cwl)
+                self.a2 = (self.bigA_low + 1) + (self.bigA_low - 1) * cwl - 2*math.sqrt(self.bigA_low) * self.alpha
                 
 
                 ###############################  High pass   ##################################
                 self.fc_h = getf3()	#cut odd frequency for high shelving filter  
-                K_h = math.tan(math.pi * self.fc_h / self.RATE)
-                G_h = 10**(self.dbGain_h/20)                                
-                self.b3 = (G_h + math.sqrt(2*G_h)*K_h + (K_h**2))/(1 + math.sqrt(2)*K_h + K_h**2)
-                self.b4 = (2*((K_h**2) - G_h))/(1 + math.sqrt(2)*K_h + K_h**2)
-                self.b5 = (G_h - math.sqrt(2*G_h)*K_h + (K_h**2))/(1 + math.sqrt(2)*K_h + K_h**2)                
-                self.a3 = (2*((K_h**2) - 1))/(1 + math.sqrt(2)*K_h + K_h**2)
-                self.a4 =  (1 - math.sqrt(2)*K_h + (K_h**2))/(1 + math.sqrt(2)*K_h + K_h**2)
+                self.w_h = 2*math.pi*(self.fc_h/self.RATE)
+                cwh = math.cos(self.w_h)
+                swh = math.sin(self.w_h)
+                self.Q = getQ()
+                self.alpha_h = swh/(2*self.Q)
+                self.bigA_high = 10**(self.dbGain_h/40)
+                
+                self.b3 = self.bigA_high * ((self.bigA_high + 1) + (self.bigA_high - 1) * cwh + 2 * math.sqrt(self.bigA_high)*self.alpha_h)
+                self.b4 = -2 * self.bigA_high * ((self.bigA_high - 1) + (self.bigA_high + 1) * cwh)
+                self.b5 = self.bigA_high * ((self.bigA_high + 1) - (self.bigA_high - 1) * cwh - 2*math.sqrt(self.bigA_high) * self.alpha_h)
+                self.a3 = (self.bigA_high + 1) - (self.bigA_high - 1) * cwh + 2 * math.sqrt(self.bigA_high) * self.alpha_h
+                self.a4 = 2 * ((self.bigA_high - 1) - (self.bigA_high + 1) * cwh)
+                self.a5 = (self.bigA_high + 1) - (self.bigA_high - 1) * cwh - 2*math.sqrt (self.bigA_high) * self.alpha_h
 
 
                 ############################### Peak filter   #################################
                 self.fc_p = getf2()                 
-                K_p = math.tan(math.pi * self.fc_p / self.RATE)   
-                G_p = 10**(self.dbGain_p/20)
+                self.w_p = 2*math.pi*(self.fc_p/self.RATE)
+                cwp = math.cos(self.w_p)
+                swp = math.sin(self.w_p)
                 self.Q = getQ()
-                self.b6 = (1 + (G_p/self.Q)*K_p + K_p**2)/(1 + (1/self.Q)*K_p + K_p**2)
-                self.b7 = (2*((K_p**2) - 1))/(1 + (1/self.Q)*K_p + K_p**2)
-                self.b8 = (1 - (G_p/self.Q)*K_p + K_p**2)/(1 + (1/self.Q)*K_p + K_p**2)
-                self.a5 = (2*((K_p**2) - 1))/(1 + (1/self.Q)*K_p + K_p**2)
-                self.a6 =  (1 - (1/self.Q)*K_p + K_p**2)/(1 + (1/self.Q)*K_p + K_p**2)
+                self.alpha_p = swp/(2*self.Q)
+                self.bigA_peak = 10**(self.dbGain_p/40)      
+
+                self.b6 = 1 + self.alpha_p*self.bigA_peak
+                self.b7 = -2*cwp
+                self.b8 = 1-self.alpha_p*self.bigA_peak
+                self.a6 = 1 + self.alpha_p/self.bigA_peak
+                self.a7 = -2*cwp
+                self.a8 = 1-self.alpha_p/self.bigA_peak
 
                 #print self.b7
                 #sys.exit(0)
@@ -242,10 +260,10 @@ class main():
                 self.a_l = [self.a0, self.a1, self.a2]
 
                 self.b_h = [self.b3, self.b4, self.b5]
-                self.a_h = [self.a0 ,self.a3, self.a4]
+                self.a_h = [self.a3 ,self.a4, self.a5]
 
                 self.b_p = [self.b6 ,self.b7, self.b8]
-                self.a_p = [self.a0, self.a5 ,self.a6]
+                self.a_p = [self.a6, self.a7 ,self.a8]
 
                                
                 ######  Update values of gain fetched from the slider   ######
