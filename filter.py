@@ -1,31 +1,36 @@
 import math
 import numpy as np 
+    
+LOWPASS = 1
+LOWSHELF = 2
+BANDPASS = 3
+PEAK = 4
+NOTCH = 5
+HIGHSHELF = 6
+HIGHPASS = 7
+    
 class Filter:
-    LOWPASS = 1
-    LOWSHELF = 2
-    BANDPASS = 3
-    PEAK = 4
-    NOTCH = 5
-    HIGHSHELF = 6
-    HIGHPASS = 7
 
     def __init__ (self):
         self.x1 = self.x2 = self.y1 = self.y2 = 0
     
-    def filter (self, x, fs, f0, q, type, dbGain):
+    def filter (self, x, fs, band1, band2, band3):
     
         #initializing return array
         y = np.zeros(x.shape, x.dtype)
         
         
-        coeffs = self.getCoeffs(f0, fs, q, type, dbGain)
+        lowCoeffs = self.getCoeffs(fs, band1)
+        midCoeffs = self.getCoeffs(fs, band2)
+        highCoeffs = self.getCoeffs(fs, band3)
         
         #transfer functions
         for ch in range(0, x.shape[1]):
             x1 = x2 = y1 = y2 = 0
-            for n in range(0,len(x)):
-                samples = [x[n,ch], x1, x2, y1, y2]
-                y[n,ch] = np.matmul(coeffs, samples)
+            for n in range(0,len(x)): 
+                y0 = np.matmul(lowCoeffs, [x[n,ch], x1, x2, y1, y2])
+                y0 = np.matmul(midCoeffs, [y0, x1, x2, y1, y2])
+                y0 = np.matmul(highCoeffs, [y0, x1, x2, y1, y2])
             
                 x2 = x1
                 x1 = x[n,ch]
@@ -34,7 +39,12 @@ class Filter:
             
         return y
     
-    def getCoeffs (self, f0, fs, q, type, dBgain):
+    def getCoeffs (self, fs, bandParams):
+        type = bandParams[0]
+        f0 = bandParams[1]
+        q = bandParams[2]
+        dBgain = bandParams[3]
+        
         w = 2*math.pi*(f0/fs)
         cw = math.cos(w)
         sw = math.sin(w)
@@ -45,7 +55,7 @@ class Filter:
         
         b0 = b1 = b2 = a0 = a1 = a2 = 0 
         
-        if type is Filter.LOWPASS:   
+        if type is LOWPASS:   
             
             b0 =  (1 - cw)/2
             b1 =   1 - cw
@@ -54,7 +64,7 @@ class Filter:
             a1 =  -2*cw
             a2 =   1 - alpha 
             
-        elif type is Filter.BANDPASS:
+        elif type is BANDPASS:
             
             b0 =  sw/2
             b1 =   0
@@ -63,7 +73,7 @@ class Filter:
             a1 =  -2*cw
             a2 =   1 - alpha 
         
-        elif type is Filter.NOTCH:
+        elif type is NOTCH:
             
             b0 =  1
             b1 =   -2*cw
@@ -72,7 +82,7 @@ class Filter:
             a1 =  -2*cw
             a2 =   1 - alpha 
         
-        elif type is Filter.HIGHPASS:
+        elif type is HIGHPASS:
             
             b0 =  (1 + cw)/2
             b1 =   -1*(1 + cw)
@@ -81,7 +91,7 @@ class Filter:
             a1 =  -2*cw
             a2 =   1 - alpha 
 
-        elif type is Filter.PEAK:
+        elif type is PEAK:
 
             b0 = 1 + alpha*bigA
             b1 = -2*cw
@@ -90,7 +100,7 @@ class Filter:
             a1 = -2*cw
             a2 = 1-alpha/bigA
 
-        elif type is Filter.LOWSHELF:
+        elif type is LOWSHELF:
 
             b0 = bigA * ((bigA + 1) + (bigA - 1) * cw + 2 * math.sqrt(bigA)*alpha)
             b1 = 2 * bigA * ((bigA - 1) - (bigA + 1) * cw)
@@ -99,7 +109,7 @@ class Filter:
             a1 = -2 * ((bigA - 1) + (bigA + 1) * cw)
             a2 = (bigA + 1) + (bigA - 1) * cw - 2*math.sqrt(bigA) * alpha
 
-        elif type is Filter.HIGHSHELF:
+        elif type is HIGHSHELF:
 
             b0 = bigA * ((bigA + 1) + (bigA - 1) * cw + 2 * math.sqrt(bigA)*alpha)
             b1 = -2 * bigA * ((bigA - 1) + (bigA + 1) * cw)
