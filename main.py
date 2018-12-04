@@ -1,6 +1,7 @@
 from __future__ import division
 import numpy as np 
 import scipy.io.wavfile as wv
+import scipy 
 import matplotlib.pyplot as mp
 import time
 import simpleaudio as sa
