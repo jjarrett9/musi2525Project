@@ -28,9 +28,9 @@ class Filter:
         for ch in range(0, x.shape[1]):
             x1 = x2 = y1 = y2 = 0
             for n in range(0,len(x)): 
-                y0 = np.matmul(lowCoeffs, [x[n,ch], x1, x2, y1, y2])
-                y0 = np.matmul(midCoeffs, [y0, x1, x2, y1, y2])
-                y0 = np.matmul(highCoeffs, [y0, x1, x2, y1, y2])
+                x0 = np.matmul(lowCoeffs, [x[n,ch], x1, x2, y1, y2])
+                x0 = np.matmul(midCoeffs, [x0, x1, x2, y1, y2])
+                x0 = np.matmul(highCoeffs, [x0, x1, x2, y1, y2])
             
                 x2 = x1
                 x1 = x[n,ch]
