@@ -1,14 +1,11 @@
 from tkinter import *
-import threading
-#import time
+import math
 import pyaudio
 import wave
 import struct
-import math
-#import numpy
+import threading
 import scipy as sp 
 from scipy import signal
-#import sys
 
 from myfunctions import clip16
 
@@ -71,67 +68,76 @@ def updatef3():
   f3pass = float(f3.get())        
   
 #########Class Function Initialisation#############  
-class Threading_func():
+class main():
   def __init__(self):
 
-        wavfile = 'auth_mono_large.wav'
+        # Import audio file
+        importedFile = 'auth_mono_large.wav'
 
-
-        #wavfile = 'audio_1_mono.wav'
-
-        #wavfile = 'audio_1_mono.wav'
-
-        print("Play the wave file %s." % wavfile)
-        # Open wave file (should be mono channel)
-        self.wf = wave.open( wavfile, 'rb' )
-        # Read the wave file properties
-        self.num_channels = self.wf.getnchannels()       	# Number of channels
-        self.RATE = self.wf.getframerate()                # Sampling rate (frames/second)
+        print("Play the wave file %s." % importedFile)
+        # Open and read wave file (should be mono channel)
+        self.wf = wave.open( importedFile, 'rb' )
+        # properties
+        self.num_channels = self.wf.getnchannels()       	# mono or stereo
+        self.RATE = self.wf.getframerate()                      # fs
         self.signal_length  = self.wf.getnframes()       	# Signal length
         self.width = self.wf.getsampwidth()       		# Number of bytes per sample
-        print("The file has %d channel(s)."            % self.num_channels)
-        print("The frame rate is %d frames/second."    % self.RATE)
-        print("The file has %d frames."                % self.signal_length)
-        print("There are %d bytes per sample."         % self.width)
+        print("The file has %d channel(s)." % self.num_channels)
+        print("The sample rate is %d." % self.RATE)
+        print("The file has %d samples." % self.signal_length)
+        print("There are %d bytes per sample." % self.width)
 
    ########  Difference equation coefficients for Low Shelving filters   #########
-        self.fc = 500
-        self.V = 0
-        
-        K = math.tan(math.pi * self.fc / self.RATE)
-        G = 10**(self.V/20)
-        self.b0 = (1 + math.sqrt(2*G)*K + G*(K**2))/(1 + math.sqrt(2)*K + K**2)
-        self.b1 = (2*(G*(K**2) - 1))/(1 + math.sqrt(2)*K + K**2)
-        self.b2 = (1 - math.sqrt(2*G)*K + G*(K**2))/(1 + math.sqrt(2)*K + K**2)
-        # a0 =  1.000000000000000
-        self.a1 = (2*((K**2) - 1))/(1 + math.sqrt(2)*K + K**2)
-        self.a2 =  (1 - math.sqrt(2)*K + (K**2))/(1 + math.sqrt(2)*K + K**2)
+        self.fc_l = 0     # default to 0
+        self.dbGain_l = 0
+        self.w_l = 2*math.pi*(self.fc_l/self.RATE)
+        cwl = math.cos(self.w_l)
+        swl = math.sin(self.w_l)
+        self.alpha = swl/(2*self.Q)
+        self.bigA_low = 10**(self.dbGain_l/40)
+
+
+        self.b0 = self.bigA_low * ((self.bigA_low + 1) + (self.bigA_low - 1) * cwl + 2 * math.sqrt(self.bigA_low)*self.alpha)
+        self.b1 = 2 * self.bigA_low * ((self.bigA_low - 1) - (self.bigA_low + 1) * cwl)
+        self.b2 = self.bigA_low * ((self.bigA_low + 1) - (self.bigA_low - 1) * cwl - 2*math.sqrt(self.bigA_low) * self.alpha)
+        self.a0 = (self.bigA_low + 1) + (self.bigA_low - 1) * cwl + 2 * math.sqrt(self.bigA_low) * self.alpha
+        self.a1 = -2 * ((self.bigA_low - 1) + (self.bigA_low + 1) * cwl)
+        self.a2 = (self.bigA_low + 1) + (self.bigA_low - 1) * cwl - 2*math.sqrt(self.bigA_low) * self.alpha
         
    ########  Difference equation coefficients for high shelving filter   ######
-        self.fc_h = 10000	#cut odd frequency for high shelving filter
-        self.V_h = 0
+        self.dbGain_h = 0
+        self.fc_h = 0     # default to 0
+        self.dbGain_h = 0
+        self.w_h = 2*math.pi*(self.fc_h/self.RATE)
+        cwh = math.cos(self.w_h)
+        swh = math.sin(self.w_h)
+        self.alpha_h = swh/(2*self.Q)
+        self.bigA_high = 10**(self.dbGain_h/40)
         
-        K_h = math.tan(math.pi * self.fc_h / self.RATE)
-        G_h = 10**(self.V_h/20)                                
-        self.b3 = (G_h + math.sqrt(2*G_h)*K_h + (K_h**2))/(1 + math.sqrt(2)*K_h + K_h**2)
-        self.b4 = (2*((K_h**2) - G_h))/(1 + math.sqrt(2)*K_h + K_h**2)
-        self.b5 = (G_h - math.sqrt(2*G_h)*K_h + (K_h**2))/(1 + math.sqrt(2)*K_h + K_h**2)                
-        self.a3 = (2*((K_h**2) - 1))/(1 + math.sqrt(2)*K_h + K_h**2)
-        self.a4 =  (1 - math.sqrt(2)*K_h + (K_h**2))/(1 + math.sqrt(2)*K_h + K_h**2)
+        self.b3 = self.bigA_high * ((self.bigA_high + 1) + (self.bigA_high - 1) * cwh + 2 * math.sqrt(self.bigA_high)*self.alpha_h)
+        self.b4 = -2 * self.bigA_high * ((self.bigA_high - 1) + (self.bigA_high + 1) * cwh)
+        self.b5 = self.bigA_high * ((self.bigA_high + 1) - (self.bigA_high - 1) * cwh - 2*math.sqrt(self.bigA_high) * self.alpha_h)
+        self.a3 = (self.bigA_high + 1) - (self.bigA_high - 1) * cwh + 2 * math.sqrt(self.bigA_high) * self.alpha_h
+        self.a4 = 2 * ((self.bigA_high - 1) - (self.bigA_high + 1) * cwh)
+        self.a5 = (self.bigA_high + 1) - (self.bigA_high - 1) * cwh - 2*math.sqrt (self.bigA_high) * self.alpha_h
 
    ################ Difference equation for Peak filter ################
-        self.fc_p = 20000 
-        self.V_p = 1 #gain in dB
-        self.Q = 10
-        
-        K_p = math.tan(math.pi * self.fc_p / self.RATE)      
-        G_p = 10**(self.V_p/20)        
+        self.dbGain_p = 0
+        self.fc_p = 0     # default to 0
+        self.dbGain_p = 0
+        self.w_p = 2*math.pi*(self.fc_p/self.RATE)
+        cwp = math.cos(self.w_p)
+        swp = math.sin(self.w_p)
+        self.alpha_p = swp/(2*self.Q)
+        self.bigA_peak = 10**(self.dbGain_p/40)      
 
-        self.b6 = (1 + (G_p/self.Q)*K_p + K_p**2)/(1 + (1/self.Q)*K_p + K_p**2)
-        self.b7 = (2*((K_p**2) - 1))/(1 + (1/self.Q)*K_p + K_p**2)
-        self.b8 = (1 - (G_p/self.Q)*K_p + K_p**2)/(1 + (1/self.Q)*K_p + K_p**2)
-        self.a5 = (2*((K_p**2) - 1))/(1 + (1/self.Q)*K_p + K_p**2)
-        self.a6 =  (1 - (1/self.Q)*K_p + K_p**2)/(1 + (1/self.Q)*K_p + K_p**2)
+        self.b6 = 1 + self.alpha_p*self.bigA_peak
+        self.b7 = -2*cwp
+        self.b8 = 1-self.alpha_p*self.bigA_peak
+        self.a6 = 1 + self.alpha_p/self.bigA_peak
+        self.a7 = -2*cwp
+        self.a8 = 1-self.alpha_p/self.bigA_peak
+
 
 ################################################################
   def Pythread(self):
@@ -198,7 +204,7 @@ class Threading_func():
                 self.fc = getf1()
                 #print self.fc
                 K = math.tan(math.pi * self.fc / self.RATE)
-                G = 10**(self.V/20)                
+                G = 10**(self.dbGain/20)                
                 self.b0 = (1 + math.sqrt(2*G)*K + G*(K**2))/(1 + math.sqrt(2)*K + K**2)
                 self.b1 = (2*(G*(K**2) - 1))/(1 + math.sqrt(2)*K + K**2)
                 self.b2 = (1 - math.sqrt(2*G)*K + G*(K**2))/(1 + math.sqrt(2)*K + K**2)                
@@ -209,7 +215,7 @@ class Threading_func():
                 ###############################  High pass   ##################################
                 self.fc_h = getf3()	#cut odd frequency for high shelving filter  
                 K_h = math.tan(math.pi * self.fc_h / self.RATE)
-                G_h = 10**(self.V_h/20)                                
+                G_h = 10**(self.dbGain_h/20)                                
                 self.b3 = (G_h + math.sqrt(2*G_h)*K_h + (K_h**2))/(1 + math.sqrt(2)*K_h + K_h**2)
                 self.b4 = (2*((K_h**2) - G_h))/(1 + math.sqrt(2)*K_h + K_h**2)
                 self.b5 = (G_h - math.sqrt(2*G_h)*K_h + (K_h**2))/(1 + math.sqrt(2)*K_h + K_h**2)                
@@ -220,7 +226,7 @@ class Threading_func():
                 ############################### Peak filter   #################################
                 self.fc_p = getf2()                 
                 K_p = math.tan(math.pi * self.fc_p / self.RATE)   
-                G_p = 10**(self.V_p/20)
+                G_p = 10**(self.dbGain_p/20)
                 self.Q = getQ()
                 self.b6 = (1 + (G_p/self.Q)*K_p + K_p**2)/(1 + (1/self.Q)*K_p + K_p**2)
                 self.b7 = (2*((K_p**2) - 1))/(1 + (1/self.Q)*K_p + K_p**2)
@@ -243,9 +249,9 @@ class Threading_func():
 
                                
                 ######  Update values of gain fetched from the slider   ######
-                self.V = getvalue_1()
-                self.V_h = getvalue_3()
-                self.V_p = getvalue_2()
+                self.dbGain = getvalue_1()
+                self.dbGain_h = getvalue_3()
+                self.dbGain_p = getvalue_2()
                 ################
                 ##print self.fc
                 #print self.fc_h
@@ -278,7 +284,7 @@ def ROCK_RESPONSE():
     scale3.set(23)    
 
 ##########Thread############
-a = Threading_func()
+a = main()
 thread = threading.Thread(target=a.Pythread) #Thread for object "a" of class Thread
 thread.daemon = True 
 thread.start()
