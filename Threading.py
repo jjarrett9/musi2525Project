@@ -189,7 +189,7 @@ class Threading_func():
                 # Compute output value
                 output_value = clip16(output_value)    # Number
                 # Convert output value to binary string
-                output_string = struct.pack('h'* BLOCKSIZE, *output_value)
+                output_string = struct.pack('h'*BLOCKSIZE, *output_value.astype("int16"))
                 
                 # Write binary string to audio stream
                 stream.write(output_string)                                
