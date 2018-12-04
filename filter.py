@@ -27,13 +27,20 @@ class Filter:
         #transfer functions
         for ch in range(0, x.shape[1]):
             x1 = x2 = y1 = y2 = 0
+            low1 = low2 = 0
+            mid1 = mid2 = 0
             for n in range(0,len(x)): 
-                x0 = np.matmul(lowCoeffs, [x[n,ch], x1, x2, y1, y2])
-                x0 = np.matmul(midCoeffs, [x0, x1, x2, y1, y2])
-                x0 = np.matmul(highCoeffs, [x0, x1, x2, y1, y2])
+                
+                low0 = np.matmul(lowCoeffs, [x[n,ch], x1, x2, low1, low2])
+                mid0 = np.matmul(midCoeffs, [low0, low1, low2, mid1, mid2])
+                y[n,ch] = np.matmul(highCoeffs, [mid0, mid1, mid2, y1, y2])
             
                 x2 = x1
                 x1 = x[n,ch]
+                low2 = low1
+                low1 = low0
+                mid2 = mid1
+                mid1 = mid0
                 y2 = y1
                 y1 = y[n,ch]
             

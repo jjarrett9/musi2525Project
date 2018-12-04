@@ -28,9 +28,6 @@ audioFs, orig_audio = 44100, generateRandomNoise(1024)
 
 
 #Replace this with GUI and such
-f0 = eval(input("Enter center frequency: "))
-q = eval(input("Enter filter Q: "))
-g = eval(input("Enter gain: "))
 
 print("Working...")
 start = time.time()
