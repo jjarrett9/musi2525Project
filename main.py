@@ -7,49 +7,54 @@ import simpleaudio as sa
 import pyaudio
 import tkinter as tk
 import filter
+
 types = { 'High Pass', 'Low Shelf', 'Band Pass', 'Peak', 'Notch', 'High Shelf', 'Low Pass' }
 
 #             type            , f0  , q, gain
-lowParams =  [filter.LOWSHELF , 50  , 1, 0]
-midParams =  [filter.PEAK     , 500 , 1, 0]
-highParams = [filter.HIGHSHELF, 5000, 1, 0]
-# 
-# f = filter.Filter()
-# 
-# def generateRandomNoise(t):
-#     t = int(t)
-#     noise = np.random.normal(0,10000,(t,2))
-#     return noise
+lowParams =  [filter.HIGHPASS , 100 , 1, 0]
+midParams =  [filter.NOTCH     , 500 , 0.5, 0]
+highParams = [filter.HIGHSHELF, 5000, 1, -6]
+#LOWSHELF HIGHPASS PEAK NOTCH BANDPASS LOWPASS HIGHSELF 
 
-# #Replace this with file read button
-# #audioFs, orig_audio = wv.read('serato_bigband.wav')
-# #audioFs, orig_audio = 44100, generateRandomNoise(1024)
-# #Replace this with self and such
+f = filter.Filter() 
 
-# print("Working...")
-# start = time.time()
-# #Replace this with self and such
-# filtered = f.filter(orig_audio*1., audioFs, lowParams, midParams, highParams)
-# 
-# output = np.clip(filtered, -32767, 32768)
-# end = time.time() - start
-# print("Done.")
-# 
-# length = len(orig_audio)
-# print(f"{end*audioFs:.0f} samples ({end:.3f} seconds) elapsed, processed {length:d} samples ({length/audioFs:.3f} seconds).")
-# 
-# wave_obj = sa.WaveObject(output.astype("int16"), 2, 2, 44100)
-# play_obj = wave_obj.play()
+# a noise generation function used for testing.
+def generateRandomNoise(t):
+    t = int(t)
+    noise = np.random.normal(0,10000,(t,2))
+    return noise
 
-# # Remove this later
-# mp.figure(1)
-# mp.subplot(211)
-# mp.plot(orig_audio)
-# mp.subplot(212)
-# mp.plot(output.astype("int16"))
-# mp.show()
+# Reads the .wav file.
+audioFs, orig_audio = wv.read('serato_bigband.wav')
+#audioFs, orig_audio = 44100, generateRandomNoise(1024)
+ 
+print("Working...")
+start = time.time()
+filtered = f.filter(orig_audio*1., audioFs, lowParams, midParams, highParams)
+output = np.clip(filtered, -32767, 32768)
+end = time.time() - start
+print("Done.")
+  
+length = len(orig_audio)
+print(f"{end*audioFs:.0f} samples ({end:.3f} seconds) elapsed, processed {length:d} samples ({length/audioFs:.3f} seconds).")
+ 
+# reformats the array of floating points to an array of integers.
+# plays the audio
+wave_obj = sa.WaveObject(output.astype("int16"), 2, 2, 44100)
+play_obj = wave_obj.play()
 
-# wv.write('lp_serato2.wav', audioFs, output.astype("int16"))
+# Plots original audio and the filtered audio
+mp.figure(1)
+mp.subplot(211)
+mp.plot(orig_audio)
+mp.subplot(212)
+mp.plot(output.astype("int16"))
+mp.show()
+
+# writes the file
+wv.write('output.wav', audioFs, output.astype("int16"))
+
+############################### GUI CODE BELOW ##############################
 
 class Band(tk.Frame):
     def __init__(self, parent, type, freq, q, *args, **kwargs):
@@ -107,7 +112,15 @@ class MainApplication(tk.Frame):
         self.b3 = Band(b3window, filter.PEAK, 500, 1)
         b3window.add(b3Label)
         b3window.add(self.b3)
-    
+        
+        self.applyButton = tk.Button(self, text="Apply", command=self.update_params)
+        self.applyButton.grid(row = 2, column = 0)
+              
+        
+    def update_params(self):
+#         global lowParams
+#         lowParams = 
+        return
     def text_to_type(argument): 
         switcher = { 
             "High Shelf":filter.HIGHSHELF,
@@ -132,9 +145,6 @@ class MainApplication(tk.Frame):
         } 
         return switcher.get(arg, "Low Shelf") 
     
-    def update_high_params(self, event=0):
-        global highParams
-        print(self.highGain.get())
         #highparams = [self.text_to_type(highTyp), int(highFreq.get()), int(highQ.get()), self.highGain.get()]
 # infinite loop () a must for self)
 if __name__ == "__main__":
