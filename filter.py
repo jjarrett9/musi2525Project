@@ -109,7 +109,7 @@ class Filter:
 
         elif type is LOWSHELF:
 
-            b0 = bigA * ((bigA + 1) + (bigA - 1) * cw + 2 * math.sqrt(bigA)*alpha)
+            b0 = bigA * ((bigA + 1) - (bigA - 1) * cw + 2 * math.sqrt(bigA)*alpha)
             b1 = 2 * bigA * ((bigA - 1) - (bigA + 1) * cw)
             b2 = bigA * ((bigA + 1) - (bigA - 1) * cw - 2*math.sqrt(bigA) * alpha)
             a0 = (bigA + 1) + (bigA - 1) * cw + 2 * math.sqrt(bigA) * alpha
@@ -120,7 +120,7 @@ class Filter:
 
             b0 = bigA * ((bigA + 1) + (bigA - 1) * cw + 2 * math.sqrt(bigA)*alpha)
             b1 = -2 * bigA * ((bigA - 1) + (bigA + 1) * cw)
-            b2 = bigA * ((bigA + 1) - (bigA - 1) * cw - 2*math.sqrt(bigA) * alpha)
+            b2 = bigA * ((bigA + 1) + (bigA - 1) * cw - 2*math.sqrt(bigA) * alpha)
             a0 = (bigA + 1) - (bigA - 1) * cw + 2 * math.sqrt(bigA) * alpha
             a1 = 2 * ((bigA - 1) - (bigA + 1) * cw)
             a2 = (bigA + 1) - (bigA - 1) * cw - 2*math.sqrt (bigA) * alpha
