@@ -112,7 +112,7 @@ class MainApplication(tk.Frame):
     
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
-        
+        self.filepath = 'serato_bigband.wav'
         self.parent = parent
         self.config(bg="light blue")
         tk.Label(self, text="Parametric EQ", font = "Arial 20 bold", bg="light blue").grid(row = 0, column = 1, ipady = 5)
