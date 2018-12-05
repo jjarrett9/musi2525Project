@@ -12,64 +12,64 @@ types = { 'High Pass', 'Low Shelf', 'Band Pass', 'Peak', 'Notch', 'High Shelf', 
 
 #             type            , f0  , q, gain
 lowParams =  [filter.HIGHPASS , 100 , 1, 0]
-midParams =  [filter.NOTCH     , 500 , 0.5, 0]
+midParams =  [filter.NOTCH    , 500 , 0.5, 0]
 highParams = [filter.HIGHSHELF, 5000, 1, -6]
 #LOWSHELF HIGHPASS PEAK NOTCH BANDPASS LOWPASS HIGHSELF 
 
-f = filter.Filter() 
-
-# a noise generation function used for testing.
-def generateRandomNoise(t):
-    t = int(t)
-    noise = np.random.normal(0,10000,(t,2))
-    return noise
-
-# Reads the .wav file.
-audioFs, orig_audio = wv.read('serato_bigband.wav')
-#audioFs, orig_audio = 44100, generateRandomNoise(1024)
- 
-print("Working...")
-start = time.time()
-filtered = f.filter(orig_audio*1., audioFs, lowParams, midParams, highParams)
-output = np.clip(filtered, -32767, 32768)
-end = time.time() - start
-print("Done.")
-  
-length = len(orig_audio)
-print(f"{end*audioFs:.0f} samples ({end:.3f} seconds) elapsed, processed {length:d} samples ({length/audioFs:.3f} seconds).")
- 
-# reformats the array of floating points to an array of integers.
-# plays the audio
-wave_obj = sa.WaveObject(output.astype("int16"), 2, 2, 44100)
-play_obj = wave_obj.play()
-
-# Plots original audio and the filtered audio
-mp.figure(1)
-mp.subplot(211)
-mp.plot(orig_audio)
-mp.subplot(212)
-mp.plot(output.astype("int16"))
-mp.show()
-
-# writes the file
-wv.write('output.wav', audioFs, output.astype("int16"))
+# f = filter.Filter() 
+# 
+# # a noise generation function used for testing.
+# def generateRandomNoise(t):
+#     t = int(t)
+#     noise = np.random.normal(0,10000,(t,2))
+#     return noise
+# 
+# # Reads the .wav file.
+# audioFs, orig_audio = wv.read('serato_bigband.wav')
+# #audioFs, orig_audio = 44100, generateRandomNoise(1024)
+#  
+# print("Working...")
+# start = time.time()
+# filtered = f.filter(orig_audio*1., audioFs, lowParams, midParams, highParams)
+# output = np.clip(filtered, -32767, 32768)
+# end = time.time() - start
+# print("Done.")
+# length = len(orig_audio)
+# print(f"{end*audioFs:.0f} samples ({end:.3f} seconds) elapsed, processed {length:d} samples ({length/audioFs:.3f} seconds).")
+#  
+# # reformats the array of floating points to an array of integers.
+# # plays the audio
+# wave_obj = sa.WaveObject(output.astype("int16"), 2, 2, 44100)
+# play_obj = wave_obj.play()
+# 
+# # Plots original audio and the filtered audio
+# mp.figure(1)
+# mp.subplot(211)
+# mp.plot(orig_audio)
+# mp.subplot(212)
+# mp.plot(output.astype("int16"))
+# mp.show()
+# 
+# # writes the file
+# wv.write('output.wav', audioFs, output.astype("int16"))
 
 ############################### GUI CODE BELOW ##############################
 
 class Band(tk.Frame):
-    def __init__(self, parent, type, freq, q, *args, **kwargs):
+    def __init__(self, parent, params, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
         self.Type  = tk.StringVar(self)
         self.Freq  = tk.StringVar(self)
         self.Q     = tk.StringVar(self)
         
-        self.Type.set(type)
-        self.Freq.set(freq)
-        self.Q.set(q)
+        self.Type.set(self.parent.master.type_to_text(params[0]))
+        self.Freq.set(params[1])
+        self.Q.set(params[2])
         # Band 
         self.Gain = tk.Scale(self, from_=6, to_=-30, resolution = 0.1)
         self.Gain.grid(row = 0, column = 2, rowspan = 3)
+        self.Gain.set(params[3])
         tk.Label(self, text="Type: ",font = "Arial 12").grid(row = 0, column = 0, sticky='w')
         self.TypeMenu = tk.OptionMenu(self, self.Type, *types)
         self.TypeMenu.grid(row = 0, column = 1, sticky='ew')
@@ -95,33 +95,57 @@ class MainApplication(tk.Frame):
         b1window = tk.PanedWindow(self, orient ='vertical')
         b1window.grid(row = 1, column = 0, padx = 5, pady = 5)
         b1Label = tk.Label(b1window, text="Band 1", font = "Arial 16 bold")
-        self.b1 = Band(b1window, filter.LOWSHELF, 50, 1)
+        self.b1 = Band(b1window, lowParams)
         b1window.add(b1Label)
         b1window.add(self.b1)
         
         b2window = tk.PanedWindow(self, orient ='vertical')
         b2window.grid(row = 1, column = 1, padx = 5, pady = 5)
         b2Label = tk.Label(b2window, text="Band 2", font = "Arial 16 bold")
-        self.b2 = Band(b2window, filter.PEAK, 500, 1)
+        self.b2 = Band(b2window, midParams)
         b2window.add(b2Label)
         b2window.add(self.b2)
         
         b3window = tk.PanedWindow(self, orient ='vertical')
         b3window.grid(row = 1, column = 2, padx = 5, pady = 5)
         b3Label = tk.Label(b3window, text="Band 3", font = "Arial 16 bold")
-        self.b3 = Band(b3window, filter.PEAK, 500, 1)
+        self.b3 = Band(b3window, highParams)
         b3window.add(b3Label)
         b3window.add(self.b3)
         
         self.applyButton = tk.Button(self, text="Apply", command=self.update_params)
         self.applyButton.grid(row = 2, column = 0)
+        
+        self.outputButton = tk.Button(self, text="Output", command=self.output)
+        self.outputButton.grid(row = 2, column = 1)
               
         
     def update_params(self):
-#         global lowParams
-#         lowParams = 
+        global lowParams, midParams, highParams
+        lowParams = [self.text_to_type(self.b1.Type.get()), int(self.b1.Freq.get()), float(self.b1.Q.get()), self.b1.Gain.get()];
+        midParams = [self.text_to_type(self.b2.Type.get()), int(self.b2.Freq.get()), float(self.b2.Q.get()), self.b2.Gain.get()];
+        highParams = [self.text_to_type(self.b3.Type.get()), int(self.b3.Freq.get()), float(self.b3.Q.get()), self.b3.Gain.get()];
         return
-    def text_to_type(argument): 
+    
+    def output(self):
+        audioFs, orig_audio = wv.read('serato_bigband.wav')
+        #audioFs, orig_audio = 44100, generateRandomNoise(1024)
+        f = filter.Filter() 
+        print("Working...")
+        start = time.time()
+        filtered = f.filter(orig_audio*1., audioFs, lowParams, midParams, highParams)
+        output = np.clip(filtered, -32767, 32768)
+        end = time.time() - start
+        print("Done.")
+        length = len(orig_audio)
+        print(f"{end*audioFs:.0f} samples ({end:.3f} seconds) elapsed, processed {length:d} samples ({length/audioFs:.3f} seconds).")
+        
+        wave_obj = sa.WaveObject(output.astype("int16"), 2, 2, 44100)
+        play_obj = wave_obj.play()
+
+        return
+    
+    def text_to_type(self, arg): 
         switcher = { 
             "High Shelf":filter.HIGHSHELF,
             "Low Shelf":filter.LOWSHELF,
@@ -133,7 +157,7 @@ class MainApplication(tk.Frame):
         } 
         return switcher.get(arg, filter.LOWSHELF) 
     
-    def type_to_text(argument): 
+    def type_to_text(self, arg): 
         switcher = { 
             filter.HIGHSHELF:"High Shelf",
             filter.LOWSHELF:"Low Shelf",
