@@ -1,0 +1,5 @@
+John - Filter coefficients (getCoeffs() in filter.py), spent lots of time trying to get the code to run in real time using pyaudio,
+but was never successful. 
+
+Tajii - Transfer Functions(filter() in filter.py), GUI, but the GUI was dependant on having working real
+time audio. 
